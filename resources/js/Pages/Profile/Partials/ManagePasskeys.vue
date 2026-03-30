@@ -21,7 +21,8 @@ const registrationError = ref('');
 const deviceName = ref('');
 
 onMounted(() => {
-    isSupported.value = window.PublicKeyCredential && 
+    isSupported.value = window.isSecureContext && 
+        window.PublicKeyCredential && 
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
         PublicKeyCredential.isConditionalMediationAvailable;
 });
@@ -57,7 +58,13 @@ const addPasskey = async () => {
         
     } catch (err) {
         console.error(err);
-        registrationError.value = 'Не удалось создать Passkey. Убедитесь, что ваше устройство поддерживает биометрию.';
+        if (err.name === 'SecurityError') {
+            registrationError.value = 'Ошибка безопасности: Регистрация разрешена только на доверенных доменах (HTTPS или localhost). Убедитесь, что APP_URL в .env совпадает с вашим доменом.';
+        } else if (err.name === 'NotAllowedError') {
+            registrationError.value = 'Операция отменена или отклонена пользователем/системой.';
+        } else {
+            registrationError.value = `Ошибка: ${err.message || 'Не удалось создать Passkey.'}`;
+        }
     }
 };
 
