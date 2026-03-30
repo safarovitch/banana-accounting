@@ -73,7 +73,12 @@ const formatCurrency = (amount) => {
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200 text-sm">
-                                <tr v-for="sale in sales.data" :key="sale.id" class="hover:bg-gray-50 transition-colors">
+                                <tr 
+                                    v-for="sale in sales.data" 
+                                    :key="sale.id" 
+                                    @click="router.get(route('sales.show', sale.id))"
+                                    class="hover:bg-gray-50 transition-colors cursor-pointer"
+                                >
                                     <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ sale.client_name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ new Date(sale.sale_date).toLocaleDateString('ru-RU') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">

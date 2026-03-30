@@ -49,4 +49,20 @@ class SaleController extends Controller
 
         return redirect()->route('sales.index')->with('success', 'Продажа успешно добавлена.');
     }
+
+    public function show(Sale $sale)
+    {
+        $sale->load(['payments' => function ($query) {
+            $query->latest('payment_date');
+        }, 'payments.media']);
+        
+        // Append receipt URLs
+        $sale->payments->each(function ($payment) {
+            $payment->receipt_url = $payment->getFirstMediaUrl('receipts');
+        });
+
+        return Inertia::render('Sales/Show', [
+            'sale' => $sale,
+        ]);
+    }
 }

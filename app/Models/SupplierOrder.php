@@ -15,4 +15,9 @@ class SupplierOrder extends Model
         'order_date' => 'date',
         'received_date' => 'date',
     ];
+
+    public function payments()
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
 }
