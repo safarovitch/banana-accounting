@@ -30,7 +30,9 @@ class PasskeyController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return response()->json($action->execute($user, asJson: false));
+        // Spatie's action generates a JSON string with Base64URL encoded buffers.
+        // We decode it back to an array so response()->json() can send it correctly.
+        return response()->json(json_decode($action->execute($user), true));
     }
 
     public function register(Request $request, StorePasskeyAction $action)
@@ -49,9 +51,8 @@ class PasskeyController extends Controller
 
     public function loginOptions(Request $request, GeneratePasskeyAuthenticationOptionsAction $action)
     {
-        // For auto-login, we don't necessarily need a user upfront if using resident keys (discoverable credentials)
-        // But Spatie's action might need it or can be null.
-        return response()->json($action->execute());
+        // Decode the Spatie JSON string to avoid double-encoding in the response.
+        return response()->json(json_decode($action->execute(), true));
     }
 
     public function login(Request $request, FindPasskeyToAuthenticateAction $action)
