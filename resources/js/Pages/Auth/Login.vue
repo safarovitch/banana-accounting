@@ -48,15 +48,21 @@ onMounted(async () => {
 });
 
 const attemptPasskeyLogin = async (conditional = false) => {
+    // If we're already Doing a manual login, don't start another one.
     if (isProcessing.value && !conditional) return;
     
-    // If a request is already pending (like Conditional UI), abort it before starting a manual one
+    // If an automatic session is active and we click manually, we MUST abort it first.
     if (passkeyAbortController) {
         passkeyAbortController.abort();
     }
     
     passkeyAbortController = new AbortController();
-    isProcessing.value = true;
+    
+    // Only set the 'processing' flag for manual clicks to avoid blocking.
+    if (!conditional) {
+        isProcessing.value = true;
+    }
+    
     passkeyError.value = '';
     
     try {
