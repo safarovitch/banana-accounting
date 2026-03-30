@@ -30,9 +30,12 @@ class PasskeyController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Spatie's action generates a JSON string with Base64URL encoded buffers.
-        // We decode it back to an array so response()->json() can send it correctly.
-        return response()->json(json_decode($action->execute($user), true));
+        $options = $action->execute($user);
+        
+        session()->put('passkey-register-options', $options);
+
+        // Decode the Spatie JSON string to avoid double-encoding in the response.
+        return response()->json(json_decode($options, true));
     }
 
     public function register(Request $request, StorePasskeyAction $action)
@@ -41,9 +44,11 @@ class PasskeyController extends Controller
         $user = Auth::user();
 
         $action->execute(
-            $user,
-            $request->input('name', 'My Device'),
-            $request->input('publicKeyCredential')
+            authenticatable: $user,
+            passkeyJson: json_encode($request->input('publicKeyCredential')),
+            passkeyOptionsJson: session()->get('passkey-register-options'),
+            hostName: $request->getHost(),
+            additionalProperties: ['name' => $request->input('name', 'Мое устройство')]
         );
 
         return back()->with('status', 'passkey-registered');
@@ -57,7 +62,10 @@ class PasskeyController extends Controller
 
     public function login(Request $request, FindPasskeyToAuthenticateAction $action)
     {
-        $passkey = $action->execute($request->input('publicKeyCredential'));
+        $passkey = $action->execute(
+            publicKeyCredentialJson: json_encode($request->input('publicKeyCredential')),
+            passkeyOptionsJson: session()->get('passkey-authentication-options')
+        );
 
         if (!$passkey) {
             return back()->withErrors(['email' => 'Биометрическая аутентификация не удалась.']);
