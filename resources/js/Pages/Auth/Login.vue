@@ -33,6 +33,8 @@ const submit = () => {
 
 const isPasskeySupported = ref(false);
 const passkeyError = ref('');
+const isProcessing = ref(false);
+let passkeyAbortController = null;
 
 onMounted(async () => {
     isPasskeySupported.value = window.PublicKeyCredential && 
@@ -46,6 +48,15 @@ onMounted(async () => {
 });
 
 const attemptPasskeyLogin = async (conditional = false) => {
+    if (isProcessing.value && !conditional) return;
+    
+    // If a request is already pending (like Conditional UI), abort it before starting a manual one
+    if (passkeyAbortController) {
+        passkeyAbortController.abort();
+    }
+    
+    passkeyAbortController = new AbortController();
+    isProcessing.value = true;
     passkeyError.value = '';
     
     try {
@@ -56,21 +67,31 @@ const attemptPasskeyLogin = async (conditional = false) => {
         // 2. Trigger biometric challenge
         const credential = await navigator.credentials.get({
             publicKey: options,
-            mediation: conditional ? 'conditional' : 'optional'
+            mediation: conditional ? 'conditional' : 'optional',
+            signal: passkeyAbortController.signal
         });
         
-        if (!credential) return;
+        if (!credential) {
+            isProcessing.value = false;
+            return;
+        }
 
         // 3. Submit to server
         useForm({
             publicKeyCredential: credentialToJSON(credential)
         }).post(route('passkeys.login'), {
+            onFinish: () => {
+                isProcessing.value = false;
+            },
             onError: (errors) => {
                 passkeyError.value = errors.email || 'Биометрический вход не удался.';
             }
         });
 
     } catch (err) {
+        isProcessing.value = false;
+        if (err.name === 'AbortError') return;
+        
         if (!conditional) {
             console.error(err);
             passkeyError.value = 'Не удалось войти с помощью биометрии.';
