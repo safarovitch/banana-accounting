@@ -44,6 +44,11 @@ Route::middleware('auth')->group(function () {
 
   Route::resource('suppliers', \App\Http\Controllers\SupplierOrderController::class);
   Route::post('suppliers/{supplier}/payments', [\App\Http\Controllers\SupplierPaymentController::class, 'store'])->name('supplier-payments.store');
+
+  // Passkeys
+  Route::post('passkeys/register-options', [\App\Http\Controllers\PasskeyController::class, 'registerOptions'])->name('passkeys.register-options');
+  Route::post('passkeys/register', [\App\Http\Controllers\PasskeyController::class, 'register'])->name('passkeys.register');
+  Route::delete('passkeys/{passkey}', [\App\Http\Controllers\PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 });
 
 require __DIR__ . '/auth.php';
